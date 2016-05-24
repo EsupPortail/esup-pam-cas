@@ -1,0 +1,64 @@
+#****************************************************************************
+# hpux 11.11
+#****************************************************************************
+CC       = cc -v
+CCLIB    = -b
+LIB      = -lssl -lcrypto -lpam
+LIBPAMCAS= -lpam_cas
+INCLUDIR = -I/usr/local/include -I/usr/include -I/usr/local/openssl/include
+LPATH    = -L/opt/langtools/lib -L/usr/local/lib -L/usr/lib -L/usr/local/openssl/lib
+#****************************************************************************
+
+SRCS    =\
+       pam_cas.c\
+       cas_validator.c\
+       xml.c\
+       read_config.c
+
+OBJS    =\
+       pam_cas.o\
+       cas_validator.o\
+       xml.o\
+       read_config.o
+
+SRCTEST =\
+       castest.c
+
+OBJTEST =castest.o
+
+BINTEST =castest
+
+PAM_CAS  =libpam_cas.sl
+#------------------ targets -------------
+
+all:    $(PAM_CAS) $(BINTEST)
+
+pam: $(PAM_CAS)
+
+test: $(BINTEST)
+
+cleanobjs:
+       rm -f $(OBJS)
+
+cleanpam:
+       rm -f $(PAM_CAS)
+
+cleantest:
+       rm -f $(OBJTEST) $(BINTEST)
+
+clean:  cleanobjs cleanpam cleantest
+
+#--------------- libpam_cas -------------
+
+libpam_cas.sl:        $(CC) $(CCLIB) $(INCLUDIR) -o libpam_cas.sl $(SRCS) $(LPATH) $(LIB)
+       cp libpam_cas.sl /usr/local/lib
+
+
+#--------------- castest  ---------------
+
+castest: castest.o $(OBJS)
+       echo "test "
+       $(CC)   -o castest castest.o  $(LPATH) $(LIBPAMCAS)
+
+castest.o:
+       ${CC}  $(INCLUDIR) -c -o castest.o castest.c 

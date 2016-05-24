@@ -1,0 +1,16 @@
+README du package esup de pam_cas
+
+pam-cas est un module permettant a un 'service' UNIX sachant authentifier via PAM d'utiliser
+le mecanisme de SSO du CAS.
+
+pam_cas est issu de la distribution cas-client proposee par l'Universite de Yale :
+http://www.yale.edu/tp/cas/
+
+
+Des  modifications tres importantes ont ete apportee par esup-portail a la distribution initiale
+
+Voir la documentation esup-portail associee :
+http://esup-portail.org/consortium/espace/SSO_1B/tech/cas/cas_pam2.html
+
+Les sources sont dans le repertoire source, et le certificat de l'Autorite de
+Certification racine du CRU dans le repertoire cert

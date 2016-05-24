@@ -1,0 +1,19 @@
+Pam_cas-2.0.11-esup-2.0.2 :
+    - ajout du Makefile.solaris
+
+Pam_cas-2.0.11-esup-2.0.1 :
+    - le fichier INSTALL n'etait pas a jour
+
+Pam_cas-2.0.11-esup-2.0 :
+    C'est le package Pam_cas-2.0.11-esup-2-alpha-2, renomme.
+
+
+Pam_cas-2.0.11-esup-2-alpha-2 :
+    - modification de la lecture du fichier de conf, pour eliminer le caractere final \r
+    - ajout de CAS_LEN_NETID dans cas.h pour parametrer la longueur du netid
+
+Pam_cas-2.0.11-esup-2-alpha-1 : 
+    - Le PT est ajoute dans la log normale en cas d'erreur d'authentification,
+      si le debug pam_cas est active.
+    - Un message specifique est affiche dans la log si le PAM-user est different
+      du CAS-user (ex : problemes de majuscules)
