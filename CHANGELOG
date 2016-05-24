@@ -1,3 +1,8 @@
+Pam_cas-2.0.11-esup-2.0.4 (30/08/2006) :
+    - test du net-id en case insensitive (Velpi)
+    - ajout d'un log en cas d'authentification reussie, si debug on (Velpi)
+    - correction d'une erreur de segmentation sur archi 64 bits (Emmanuel Aubert)
+
 Pam_cas-2.0.11-esup-2.0.3 :
     - la taille par defaut du ticket passe de 14 a 32
 

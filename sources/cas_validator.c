@@ -86,6 +86,9 @@ int cas_validate(
     ERR_load_BIO_strings();
     SSL_load_error_strings();
     OpenSSL_add_all_algorithms();
+#if defined(OpenSSL_add_ssl_algorithms)
+    OpenSSL_add_ssl_algorithms();
+#endif
 
     /* Set up the SSL context */
     ctx = SSL_CTX_new(SSLv23_client_method());

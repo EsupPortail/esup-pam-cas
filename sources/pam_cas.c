@@ -29,6 +29,11 @@
  *  3. The names "Yale" and "Yale University" must not be used to endorse
  *  or promote products derived from this software.
  */
+/*
+ *
+ * modify by esup consortium : http://esup-portail.org/
+ * 
+ */
 
 #define PAM_SM_AUTH
 #include <security/pam_appl.h>
@@ -129,7 +134,9 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
 
     /* Confirm the user and return appropriately. */
-    if ((success == CAS_SUCCESS) && (!strcmp(user, netid))) {
+    if ((success == CAS_SUCCESS) && (!strcasecmp(user, netid))) {
+	if (pstConfig->debug)
+	  syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CAS PT:%s", user, pw);
         closelog();
         END(PAM_SUCCESS);
     } else {
