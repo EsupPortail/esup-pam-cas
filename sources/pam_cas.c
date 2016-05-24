@@ -74,18 +74,29 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     char netid[CAS_LEN_NETID];
     int i, success, res, ret;
 
+    /* prepare log */
+    openlog("PAM_cas", LOG_PID, LOG_AUTH);
+
     /* get username and password */
-    if (pam_get_user(pamh, (const char**) &user, NULL) != PAM_SUCCESS)
+    if (pam_get_user(pamh, (const char**) &user, NULL) != PAM_SUCCESS){
+	syslog(LOG_ERR, "Cannot get username");
 	END(PAM_AUTH_ERR);
-    if (pam_get_item(pamh, PAM_AUTHTOK, (const void**) &pw) != PAM_SUCCESS)
+    }
+    if (pam_get_item(pamh, PAM_AUTHTOK, (const void**) &pw) != PAM_SUCCESS){
+	syslog(LOG_ERR, "Cannot get password (ticket)");
 	END(PAM_AUTH_ERR);
+    }
 
    if (!pw)
    {
-      if (_get_authtok(pamh) != PAM_SUCCESS)
+      if (_get_authtok(pamh) != PAM_SUCCESS){
+	 syslog(LOG_ERR, "Cannot get_authtok from pamh");
          END(PAM_AUTH_ERR);
-      if (pam_get_item(pamh, PAM_AUTHTOK, (const void**) &pw) != PAM_SUCCESS)
+      }
+      if (pam_get_item(pamh, PAM_AUTHTOK, (const void**) &pw) != PAM_SUCCESS){
+	syslog(LOG_ERR, "Cannot get password (ticket) item from pamh");
 	END(PAM_AUTH_ERR);
+      }
    }
 
     /*
@@ -96,9 +107,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
    if ((strncmp(CAS_BEGIN_PT, pw, strlen(CAS_BEGIN_PT)) != 0)
        && (strncmp(CAS_BEGIN_ST, pw, strlen(CAS_BEGIN_ST)) != 0))
          END(PAM_AUTH_ERR);
-
-    /* prepare log */
-    openlog("PAM_cas", LOG_PID, LOG_AUTH);
 
     /* check arguments */
     for (i = 0; i < argc; i++) {

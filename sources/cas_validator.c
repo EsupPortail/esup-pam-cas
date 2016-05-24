@@ -82,6 +82,7 @@ int cas_validate(
 
   if (config->ssl)
   {
+    LOG("We use SSL as configured\n", "");
     /* Set up the SSL library */
     ERR_load_BIO_strings();
     SSL_load_error_strings();
@@ -92,6 +93,12 @@ int cas_validate(
 
     /* Set up the SSL context */
     ctx = SSL_CTX_new(SSLv23_client_method());
+    if ( ! ctx ) 
+    {
+      syslog(LOG_ERR, "Cannot create SSL context");
+      LOG("Cannot create SSL context", "");
+      END(-1);
+    }
 
     /* Load the trust store */
     if(! SSL_CTX_load_verify_locations(ctx, config->trusted_ca, NULL))
@@ -110,11 +117,13 @@ int cas_validate(
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
     /* Create and setup the connection */
+    LOG("We connect to host %s\n", config->host);
     BIO_set_conn_hostname(bio, config->host);
     BIO_set_conn_port(bio, config->port);
     if(BIO_do_connect(bio) <= 0)
     {
       LOG("Error attempting to connect : %s\n", ERR_reason_error_string(ERR_get_error()));
+      syslog(LOG_ERR, "Error attempting to connect : %s\n", ERR_reason_error_string(ERR_get_error()));
       END(CAS_SSL_ERROR_CONN);
     }
 
@@ -122,6 +131,7 @@ int cas_validate(
     if (SSL_get_verify_result(ssl) != X509_V_OK)
     {
       LOG("Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
+      syslog(LOG_ERR,"Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
       END(CAS_SSL_ERROR_CERT_VALID);
     }
   }
@@ -132,6 +142,7 @@ int cas_validate(
     if(BIO_do_connect(bio) <= 0)
     {
       LOG("Error attempting to connect : %s\n", config->host);
+      syslog(LOG_ERR,"Error attempting to connect : %s\n", config->host);
       END(CAS_ERROR_CONN);
     }
   }
@@ -140,7 +151,7 @@ int cas_validate(
   full_request = malloc(strlen(CAS_METHOD) + strlen(" ")
     + strlen(config->uriValidate) + strlen("?ticket=") + strlen(ticket) + 
     + strlen("&service=") + strlen(service) + strlen(" ") 
-    + strlen(CAS_PROT) + strlen("\n\n") + 1);
+    + strlen(CAS_PROT) + strlen("\r\n\r\n") + 1);
   if (full_request == NULL)
   {
       LOG("Error memory allocation%s\n", "");
@@ -153,11 +164,13 @@ int cas_validate(
   if (BIO_write(bio, full_request, strlen(full_request)) != strlen(full_request))
   {
     LOG("Unable to correctly send request to %s\n", config->host);
+    syslog(LOG_ERR, "Unable to correctly send request to %s\n", config->host);
     END(CAS_ERROR_HTTP);
   }
 
   /* Read the response */
   total = 0;
+  b = 0;
   do 
   {
     b = BIO_read(bio, buf + total, (sizeof(buf) - 1) - total);
@@ -165,8 +178,10 @@ int cas_validate(
   } while (b > 0);
   buf[total] = '\0';
 
+  LOG("We got a response\n", "");
   if (b != 0 || total >= sizeof(buf) - 1)
   {
+    syslog(LOG_ERR, "Unexpected read error or response too large from %s\n", config->host);
     LOG("Unexpected read error or response too large from %s\n", config->host);
     LOG("b = %d\n", b);
     LOG("total = %d\n", total);
@@ -174,6 +189,7 @@ int cas_validate(
     END(CAS_ERROR_HTTP);		// unexpected read error or response too large
   }
 
+  LOG("Header = %s\n", buf);
   str = (char *)strstr(buf, "\r\n\r\n");  // find the end of the header
 
   if (!str)
@@ -181,7 +197,7 @@ int cas_validate(
     LOG("no header in response%s\n", "");
     END(CAS_ERROR_HTTP);			  // no header
   }
-  
+
   /*
    * 'str' now points to the beginning of the body, which should be an
    * XML document
@@ -193,12 +209,14 @@ int cas_validate(
     str, "cas:authenticationSuccess", 1, parsebuf, sizeof(parsebuf))) {
     LOG("authentication failure\n%s\n", str);
     LOG("   for request%s\n", full_request);
+    // syslog(LOG_ERR, "authentication failure: %s", str);
     END(CAS_BAD_TICKET);
   }
 
   // retrieve the NetID
   if (!element_body(str, "cas:user", 1, netid, sizeof(netid))) {
     LOG("unable to determine username%s\n", "");
+    syslog(LOG_ERR, "unable to determine username");
     END(CAS_PROTOCOL_FAILURE);
   }
 
@@ -219,6 +237,7 @@ int cas_validate(
   if (outbuflen < strlen(netid) + 1) 
   {
     LOG("output buffer too short%s\n", "");
+    syslog(LOG_ERR, "output buffer too short");
     END(CAS_PROTOCOL_FAILURE);
   }
 

@@ -8,7 +8,7 @@
 
 <!-- ===================== Property Definitions =========================== -->
   <property name="pam_cas.root" value="${basedir}"/>
-  <property name="pam_cas.ver"                value="2.0.11-esup-2.0.4"/>
+  <property name="pam_cas.ver"                value="2.0.11-esup-2.0.5"/>
   <property name="pam_cas.package.directory"  value="Pam_cas-${pam_cas.ver}"/>
   <property name="pam_cas.package.archive"    value="/home/packages/${pam_cas.package.directory}.tar"/>
 

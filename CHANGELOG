@@ -1,3 +1,8 @@
+Pam_cas-2.0.11-esup-2.0.5 (11/03/2008) :
+    modifications proposees par eole : http://eole.orion.education.fr
+    - ajout de logs en cas d'erreur
+    - le GET http de demande de validation se termine par "\r\n\r\n" au lieu de "\n\n"
+
 Pam_cas-2.0.11-esup-2.0.4 (30/08/2006) :
     - test du net-id en case insensitive (Velpi)
     - ajout d'un log en cas d'authentification reussie, si debug on (Velpi)
