@@ -12,13 +12,13 @@ SRCS	=\
 	pam_cas.c\
 	cas_validator.c\
 	xml.c\
-	read_config.c
+	cache.c read_config.c
 
 OBJS 	=\
 	pam_cas.o\
 	cas_validator.o\
 	xml.o\
-	read_config.o
+	cache.o read_config.o
 
 SRCTEST =\
 	castest.c
@@ -63,6 +63,9 @@ cas_validator.o: cas_validator.c cas.h xml.h
 	$(CC) $(CPFLAGS) $(incDirs) -c -o $@ $<
 
 read_config.o:	read_config.c cas.h
+	$(CC) $(CPFLAGS) $(incDirs) -c -o $@ $<
+
+cache.o:	cache.c cas.h
 	$(CC) $(CPFLAGS) $(incDirs) -c -o $@ $<
 
 #--------------- Dependency for tests  --------

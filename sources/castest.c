@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
   printf("uri = %s\n", pstConfig->uriValidate);
   printf("ssl = %s\n", pstConfig->ssl ? "on":"off");
   printf("trusted_ca = %s\n", pstConfig->trusted_ca ? pstConfig->trusted_ca : "nothing");
+  printf("cacheDirectory = %s\n", pstConfig->cacheDirectory ? pstConfig->cacheDirectory : "disabled");
   printf("debug = localtest\n");
   i = 0;
   if ((pstConfig->proxies) && (pstConfig->proxies[i]))
@@ -93,6 +94,12 @@ int main(int argc, char **argv) {
   printf("---------------------------------------------------------------\n\n");
 
   pstConfig->debug = DEBUG_LOCAL;
+
+  if (pstConfig->cacheDirectory != NULL &&
+      hasCache(service, "foo", ticket, pstConfig)) {
+    printf("found ticket in cache\n");
+  }
+  
   retour = cas_validate(ticket, service, netid, sizeof(netid), pstConfig);
   printf("---------------------------------------------------------------\n\n");
     if (retour == CAS_SUCCESS)
