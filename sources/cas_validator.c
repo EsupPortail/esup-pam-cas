@@ -36,6 +36,11 @@
  * Originally by Shawn Bayern, Yale ITS Technology and Planning.
  * Patches submitted by Vincent Mathieu, University of Nancy, France.
  */
+/*
+ *
+ * modify by esup consortium : http://esup-portail.org/
+ * 
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -151,14 +156,24 @@ int cas_validate(
   full_request = malloc(strlen(CAS_METHOD) + strlen(" ")
     + strlen(config->uriValidate) + strlen("?ticket=") + strlen(ticket) + 
     + strlen("&service=") + strlen(service) + strlen(" ") 
-    + strlen(CAS_PROT) + strlen("\r\n\r\n") + 1);
+    + strlen(GENERIC_HEADERS) + strlen ("\n")
+#ifdef HEADER_HOST_NAME
+    + strlen(HEADER_HOST_NAME) + strlen (": ") + strlen (config->host)
+#endif
+    + strlen("\n\n") + 1);
   if (full_request == NULL)
   {
       LOG("Error memory allocation%s\n", "");
       END(CAS_ERROR_MEMORY_ALLOC);
   }
+#ifdef HEADER_HOST_NAME
+  sprintf(full_request, "%s %s?ticket=%s&service=%s %s\n%s: %s\n\n",
+	  CAS_METHOD, config->uriValidate, ticket, service, GENERIC_HEADERS,
+          HEADER_HOST_NAME,config->host);
+#else
   sprintf(full_request, "%s %s?ticket=%s&service=%s %s\n\n",
-    CAS_METHOD, config->uriValidate, ticket, service, CAS_PROT);
+	  CAS_METHOD, config->uriValidate, ticket, service, GENERIC_HEADERS);
+#endif
 
   /* send request */
   if (BIO_write(bio, full_request, strlen(full_request)) != strlen(full_request))
@@ -208,7 +223,7 @@ int cas_validate(
   if (!element_body(
     str, "cas:authenticationSuccess", 1, parsebuf, sizeof(parsebuf))) {
     LOG("authentication failure\n%s\n", str);
-    LOG("   for request%s\n", full_request);
+    LOG("   for request :\n%s\n", full_request);
     // syslog(LOG_ERR, "authentication failure: %s", str);
     END(CAS_BAD_TICKET);
   }

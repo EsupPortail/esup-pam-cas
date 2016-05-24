@@ -10,7 +10,7 @@ http://www.yale.edu/tp/cas/
 Des  modifications tres importantes ont ete apportee par esup-portail a la distribution initiale
 
 Voir la documentation esup-portail associee :
-http://esup-portail.org/consortium/espace/SSO_1B/tech/cas/cas_pam2.html
+http://www.esup-portail.org/display/PROJPAMCAS/Module+PAM+pour+CAS
 
 Les sources sont dans le repertoire source, et le certificat de l'Autorite de
-Certification racine du CRU dans le repertoire cert
+Certification racine de cybertrust dans le repertoire cert

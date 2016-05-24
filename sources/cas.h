@@ -29,20 +29,37 @@
  *  3. The names "Yale" and "Yale University" must not be used to endorse
  *  or promote products derived from this software.
  */
+/*
+ *
+ * modify by esup consortium : http://esup-portail.org/
+ * 
+ */
 
 
 #define DEFAULT_CONFIG_NAME     "/etc/pam_cas.conf"
 #define DEFAULT_URI_VALIDATE    "/proxyValidate"
 
-#define CAS_METHOD "GET"
-#define CAS_PROT "HTTP/1.0"
-
 #define CAS_LEN_NETID          32
+#define HTTP_1_1               // a commenter pour http 1.0
+
+
+/*#################################################################################
+    ne pas modifier ce qui suit
+#################################################################################*/
+
+#define CAS_METHOD "GET"
+
+#ifdef HTTP_1_1
+#  define GENERIC_HEADERS "HTTP/1.1\nConnection: close"
+#  define HEADER_HOST_NAME "Host"
+#else
+#  define GENERIC_HEADERS "HTTP/1.0"
+#endif
 
 typedef struct pam_cas_config
 {
     char *host;                 // CAS server
-    char *port;                   // port TCP from CAS server
+    char *port;                 // port TCP from CAS server
     char *uriValidate;          // URI to validate PT or ST
     char *service;              // URL from service
     char *trusted_ca;           // Contents trusted certificate

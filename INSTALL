@@ -1,6 +1,6 @@
 INSTALL du package esup de pam_cas
 
-Voir la doc http://esup-portail.org/consortium/espace/SSO_1B/tech/cas/cas_pam.html
+Voir la doc http://www.esup-portail.org/display/PROJPAMCAS/Module+PAM+pour+CAS
 
 - cd source
 - adapter eventuellement le Makefile
@@ -12,5 +12,3 @@ Voir la doc http://esup-portail.org/consortium/espace/SSO_1B/tech/cas/cas_pam.ht
 
 Voir la doc pour la mise en place
 
-Voir un exemple d'utilisation a :
-http://esup-portail.org/consortium/espace/SSO_1B/tech/cas/cas_pam.html
