@@ -83,19 +83,20 @@ typedef struct pam_cas_config
 #define CAS_ERROR_CONFIG            2
 #define CAS_BAD_TICKET              3
 #define CAS_ERROR_MEMORY_ALLOC      4
-#define CAS_SSL_ERROR_CERT_LOAD     5
-#define CAS_SSL_ERROR_CERT_VALID    6
-#define CAS_SSL_ERROR_CONN          7
-#define CAS_ERROR_CONN              8
-#define CAS_ERROR_HTTP              9
-#define CAS_PROTOCOL_FAILURE        10
-#define CAS_BAD_PROXY               11
+#define CAS_SSL_ERROR_INIT          5
+#define CAS_SSL_ERROR_CERT_LOAD     6
+#define CAS_SSL_ERROR_CERT_VALID    7
+#define CAS_SSL_ERROR_CONN          8
+#define CAS_ERROR_CONN              9
+#define CAS_ERROR_HTTP              10
+#define CAS_PROTOCOL_FAILURE        11
+#define CAS_BAD_PROXY               12
+
 
 /* debug types */
 #define DEBUG_NO            0
 #define DEBUG_SYSLOG        1
 #define DEBUG_LOCAL         2
-
 
 
 int cas_validate(

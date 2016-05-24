@@ -52,6 +52,7 @@ static char *ErrorMessage[] = {
   "bad parameter", 
   "bad CAS ticket",
   "error in memory allocation",
+  "error with ssl initialization",
   "error loading local certificate",
   "error validating server certificate",
   "error with ssl connection",
@@ -119,7 +120,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 	    if (!strcmp(argv[i] + 2, user)) {
 		syslog(LOG_NOTICE, "user '%s' is excluded from the CAS PAM",
 		    user);
-                closelog();
 		END(PAM_AUTH_ERR);
 	    }
 	} else
@@ -129,7 +129,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     if (res != CAS_SUCCESS)
     {
       syslog(LOG_ERR, "Error with config file %s : %s\n", configFile, ErrorMessage[res]);
-      closelog();
       END(PAM_AUTH_ERR);
     }
 
@@ -145,7 +144,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     if ((success == CAS_SUCCESS) && (!strcasecmp(user, netid))) {
 	if (pstConfig->debug)
 	  syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CAS PT:%s", user, pw);
-        closelog();
         END(PAM_SUCCESS);
     } else {
         if (strcmp(user, netid) && (success == CAS_SUCCESS)) {
@@ -159,11 +157,11 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
             syslog(LOG_NOTICE,
               "authentication failure for user '%s' : %s.", user, ErrorMessage[success]);
        }
-       closelog();
        END(PAM_AUTH_ERR);
     }
 
 end:
+  closelog();
   if (service)
     free(service);
   if (configFile)

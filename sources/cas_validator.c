@@ -56,11 +56,12 @@
 #define SUCCEED END(CAS_SUCCESS)
 
 
-#define LOG(X, Y)  do { if (debug) { \
+#define DEBUG_LOG(X, Y)  do { if (debug) { \
   if (debug == DEBUG_LOCAL) printf((X), (Y)); \
   else if (debug == DEBUG_SYSLOG) syslog(LOG_DEBUG, (X), (Y)); \
 } \
 } while (0);
+
 
 static int debug = 0;
 
@@ -87,7 +88,7 @@ int cas_validate(
 
   if (config->ssl)
   {
-    LOG("We use SSL as configured\n", "");
+    DEBUG_LOG("We use SSL as configured\n", "");
     /* Set up the SSL library */
     ERR_load_BIO_strings();
     SSL_load_error_strings();
@@ -100,16 +101,14 @@ int cas_validate(
     ctx = SSL_CTX_new(SSLv23_client_method());
     if ( ! ctx ) 
     {
-      syslog(LOG_ERR, "Cannot create SSL context");
-      LOG("Cannot create SSL context", "");
-      END(-1);
+      DEBUG_LOG("Cannot create SSL context", "");
+      END(CAS_SSL_ERROR_INIT);
     }
 
     /* Load the trust store */
     if(! SSL_CTX_load_verify_locations(ctx, config->trusted_ca, NULL))
     {
-      syslog(LOG_ERR, "Error loading certificate store. %s\n",ERR_reason_error_string(ERR_get_error()));
-      LOG("Error loading certificate store : %s\n", ERR_reason_error_string(ERR_get_error()));
+      DEBUG_LOG("Error loading certificate store : %s\n", ERR_reason_error_string(ERR_get_error()));
       END(CAS_SSL_ERROR_CERT_LOAD);
     }
 
@@ -122,21 +121,19 @@ int cas_validate(
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 
     /* Create and setup the connection */
-    LOG("We connect to host %s\n", config->host);
+    DEBUG_LOG("We connect to host %s\n", config->host);
     BIO_set_conn_hostname(bio, config->host);
     BIO_set_conn_port(bio, config->port);
     if(BIO_do_connect(bio) <= 0)
     {
-      LOG("Error attempting to connect : %s\n", ERR_reason_error_string(ERR_get_error()));
-      syslog(LOG_ERR, "Error attempting to connect : %s\n", ERR_reason_error_string(ERR_get_error()));
+      DEBUG_LOG("Error attempting to connect : %s\n", ERR_reason_error_string(ERR_get_error()));
       END(CAS_SSL_ERROR_CONN);
     }
 
     /* Check the certificate */
     if (SSL_get_verify_result(ssl) != X509_V_OK)
     {
-      LOG("Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
-      syslog(LOG_ERR,"Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
+      DEBUG_LOG("Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
       END(CAS_SSL_ERROR_CERT_VALID);
     }
   }
@@ -146,8 +143,7 @@ int cas_validate(
     BIO_set_conn_port(bio, config->port);
     if(BIO_do_connect(bio) <= 0)
     {
-      LOG("Error attempting to connect : %s\n", config->host);
-      syslog(LOG_ERR,"Error attempting to connect : %s\n", config->host);
+      DEBUG_LOG("Error attempting to connect : %s\n", config->host);
       END(CAS_ERROR_CONN);
     }
   }
@@ -163,7 +159,7 @@ int cas_validate(
     + strlen("\n\n") + 1);
   if (full_request == NULL)
   {
-      LOG("Error memory allocation%s\n", "");
+      DEBUG_LOG("Error memory allocation%s\n", "");
       END(CAS_ERROR_MEMORY_ALLOC);
   }
 #ifdef HEADER_HOST_NAME
@@ -176,10 +172,10 @@ int cas_validate(
 #endif
 
   /* send request */
+  DEBUG_LOG("---- request :\n%s\n", full_request);
   if (BIO_write(bio, full_request, strlen(full_request)) != strlen(full_request))
   {
-    LOG("Unable to correctly send request to %s\n", config->host);
-    syslog(LOG_ERR, "Unable to correctly send request to %s\n", config->host);
+    DEBUG_LOG("Unable to correctly send request to %s\n", config->host);
     END(CAS_ERROR_HTTP);
   }
 
@@ -193,23 +189,21 @@ int cas_validate(
   } while (b > 0);
   buf[total] = '\0';
 
-  LOG("We got a response\n", "");
   if (b != 0 || total >= sizeof(buf) - 1)
   {
-    syslog(LOG_ERR, "Unexpected read error or response too large from %s\n", config->host);
-    LOG("Unexpected read error or response too large from %s\n", config->host);
-    LOG("b = %d\n", b);
-    LOG("total = %d\n", total);
-    LOG("buf = %s\n", buf);
+    DEBUG_LOG("Unexpected read error or response too large from %s\n", config->host);
+    DEBUG_LOG("b = %d\n", b);
+    DEBUG_LOG("total = %d\n", total);
+    DEBUG_LOG("buf = %s\n", buf);
     END(CAS_ERROR_HTTP);		// unexpected read error or response too large
   }
 
-  LOG("Header = %s\n", buf);
+  DEBUG_LOG("---- response :\n%s\n", buf);
   str = (char *)strstr(buf, "\r\n\r\n");  // find the end of the header
 
   if (!str)
   {
-    LOG("no header in response%s\n", "");
+    DEBUG_LOG("no header in response%s\n", "");
     END(CAS_ERROR_HTTP);			  // no header
   }
 
@@ -222,16 +216,12 @@ int cas_validate(
   
   if (!element_body(
     str, "cas:authenticationSuccess", 1, parsebuf, sizeof(parsebuf))) {
-    LOG("authentication failure\n%s\n", str);
-    LOG("   for request :\n%s\n", full_request);
-    // syslog(LOG_ERR, "authentication failure: %s", str);
     END(CAS_BAD_TICKET);
   }
 
   // retrieve the NetID
   if (!element_body(str, "cas:user", 1, netid, sizeof(netid))) {
-    LOG("unable to determine username%s\n", "");
-    syslog(LOG_ERR, "unable to determine username");
+    DEBUG_LOG("unable to determine username%s\n", "");
     END(CAS_PROTOCOL_FAILURE);
   }
 
@@ -241,7 +231,7 @@ int cas_validate(
     if (element_body(str, "cas:proxies", 1, parsebuf, sizeof(parsebuf)))
       if (element_body(str, "cas:proxy", 1, parsebuf, sizeof(parsebuf)))
         if (!arrayContains(config->proxies, parsebuf)) {
-          LOG("bad proxy: %s\n", parsebuf);
+          DEBUG_LOG("bad proxy: %s\n", parsebuf);
           END(CAS_BAD_PROXY);
         }
 
@@ -251,8 +241,8 @@ int cas_validate(
    */
   if (outbuflen < strlen(netid) + 1) 
   {
-    LOG("output buffer too short%s\n", "");
     syslog(LOG_ERR, "output buffer too short");
+    DEBUG_LOG("output buffer too short%s\n", "");
     END(CAS_PROTOCOL_FAILURE);
   }
 
@@ -277,7 +267,7 @@ static int arrayContains(char *array[], char *element) {
   int i = 0;
 
   for (p = array[0]; p; p = array[++i]) {
-    LOG("  checking element %s\n", p);
+    DEBUG_LOG("  checking element %s\n", p);
     if (!strcmp(p, element))
       return 1;
   }
