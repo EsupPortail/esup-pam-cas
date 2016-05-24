@@ -5,7 +5,7 @@ incDirs =	-I /usr/include/openssl -I /usr/kerberos/include
 LDFLAGS =	
 PAM_LDFLAGS = ${LDFLAGS} -shared
 LIBS	=
-CPFLAGS	=	-O2
+CPFLAGS	=	-O2 -fPIC
 #CPFLAGS =       -g -Wall
 
 SRCS	=\
