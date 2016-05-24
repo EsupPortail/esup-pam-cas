@@ -132,6 +132,13 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
       END(PAM_AUTH_ERR);
     }
 
+    if (pstConfig->cacheDirectory != NULL &&
+        hasCache(service, user, pw, pstConfig)) {
+      if (pstConfig->debug)
+        syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CACHED CAS PT:%s", user, pw);
+      END(PAM_SUCCESS);      
+    }
+    
     /* determine the CAS-authenticated username */
     success = cas_validate(pw, 
                            service, 
@@ -144,6 +151,10 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     if ((success == CAS_SUCCESS) && (!strcasecmp(user, netid))) {
 	if (pstConfig->debug)
 	  syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CAS PT:%s", user, pw);
+
+        if (pstConfig->cacheDirectory != NULL)
+          setCache(service, user, pw, pstConfig);
+       
         END(PAM_SUCCESS);
     } else {
         if (strcmp(user, netid) && (success == CAS_SUCCESS)) {

@@ -103,6 +103,10 @@ read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug
       {
 	  CHECKPOINTER (result->trusted_ca = strdup (v));
       }
+      else if ((!strcasecmp (k, "cacheDirectory")) && (result->cacheDirectory == NULL))
+      {
+	  CHECKPOINTER (result->cacheDirectory = strdup (v));
+      }
       else if (!strcasecmp (k, "ssl"))
       {
           result->ssl = strcasecmp (v, "on") ? 0 : 1;
@@ -165,6 +169,7 @@ static int alloc_config (pam_cas_config_t ** presult)
   result->uriValidate = NULL;
   result->service = NULL;
   result->trusted_ca = NULL;
+  result->cacheDirectory = NULL;
   result->ssl = 1;
   result->debug = 0;
   result->proxies = (char **)malloc(sizeof(char **));
@@ -238,6 +243,8 @@ void free_config(pam_cas_config_t ** pstConfig)
     free(conf->service);
   if (conf->trusted_ca != NULL)
     free(conf->trusted_ca);
+  if (conf->cacheDirectory != NULL)
+    free(conf->cacheDirectory);
   if (conf->proxies != NULL)
     free_proxies(conf->proxies);
   free(conf);

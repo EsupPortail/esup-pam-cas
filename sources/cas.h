@@ -64,6 +64,7 @@ typedef struct pam_cas_config
     char *service;              // URL from service
     char *trusted_ca;           // Contents trusted certificate
     char **proxies;             // proxies authorized
+    char *cacheDirectory;       // directory caching previous PT answers
     int ssl;                    // http or https
     int debug;                  // debug level
 }pam_cas_config_t;
@@ -101,6 +102,9 @@ typedef struct pam_cas_config
 
 int cas_validate(
 	     char *ticket, char *service, char *outbuf, int outbuflen, pam_cas_config_t *config);
+
+int hasCache(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config);
+void setCache(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config);
 
 int read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug);
 void free_config(pam_cas_config_t ** pstConfig);
