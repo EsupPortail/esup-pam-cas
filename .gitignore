@@ -1,0 +1,3 @@
+sources/*.o
+sources/pam_cas.so
+sources/castest
