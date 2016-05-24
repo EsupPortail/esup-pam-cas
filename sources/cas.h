@@ -37,7 +37,7 @@
 #define CAS_METHOD "GET"
 #define CAS_PROT "HTTP/1.0"
 
-#define CAS_LEN_NETID          14
+#define CAS_LEN_NETID          32
 
 typedef struct pam_cas_config
 {

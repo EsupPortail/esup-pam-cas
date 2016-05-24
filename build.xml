@@ -7,29 +7,37 @@
 <project name="pam_cas-esup" default="default" basedir=".">
 
 <!-- ===================== Property Definitions =========================== -->
-  <property name="pam_cas.version"        value="Pam_cas-2.0.11-esup-2.0.2"/>
-  <property name="esupdev.distrib.base"   value="/home/cri/vmathieu/packages"/>
-  <property name="esupdev.archive"        value="${esupdev.distrib.base}\${pam_cas.version}.tar"/>
+  <property name="pam_cas.root" value="${basedir}"/>
+  <property name="pam_cas.ver"                value="2.0.11-esup-2.0.3"/>
+  <property name="pam_cas.package.directory"  value="Pam_cas-${pam_cas.ver}"/>
+  <property name="pam_cas.package.archive"    value="/home/packages/${pam_cas.package.directory}.tar"/>
 
 <!-- ==================== default Target =================================== -->
   <target name="default">
-    <echo message="Faire . ant esup.buildtar pour creer le package"/>
+    <echo message="Faire . ant buildtar pour creer le package"/>
+    <echo message="Faire . ant clean pour supprimer les choses inutiles"/>
  </target>
 
+<!-- ==================== esup.clean Target =============================== -->
+  <target name="clean"
+          description="suppression des fichiers inutiles">
+    <delete>
+      <fileset dir="${pam_cas.root}" includes="**/*~ **/*.o **/*.so" defaultexcludes="no"/>
+    </delete>
+  </target>
+
 <!-- ==================== esup.buildtar Target =============================== -->
-  <target name="esup.buildtar"
+  <target name="buildtar" depends="clean"
           description="reconstruction du .tar.gz de distribution">
 
-    <echo message="basedir = ${esupdev.distrib.base}"/>
-    <delete>
-      <fileset dir="." includes="**/*~ **/*.o **/*.so"/>
-    </delete>
-    <tar destfile="${esupdev.archive}"
-         basedir="${esupdev.distrib.base}"
-         excludes="${pam_cas.version}/BIO"
-         includes="${pam_cas.version}/* ${pam_cas.version}/sources/** ${pam_cas.version}/cert/** "/>
+    <tar destfile="${pam_cas.package.archive}">
+       <tarfileset dir="${pam_cas.root}"
+         includes=" CHANGELOG INSTALL LICENCE README pam_cas.conf sources/** cert/**"
+            prefix="${pam_cas.package.directory}"
+       />
+    </tar>
 
-    <gzip src="${esupdev.archive}" zipfile="${esupdev.archive}.gz"/>
-    <delete file="${esupdev.archive}"/>
+    <gzip src="${pam_cas.package.archive}" zipfile="${pam_cas.package.archive}.gz"/>
+    <delete file="${pam_cas.package.archive}"/>
   </target>
 </project>

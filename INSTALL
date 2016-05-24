@@ -3,7 +3,7 @@ INSTALL du package esup de pam_cas
 Voir la doc http://esup-portail.org/consortium/espace/SSO_1B/tech/cas/cas_pam.html
 
 - cd source
-- adapter eventuellement le Makefie (celui fourni fonctionne sous redhat)
+- adapter eventuellement le Makefile
 - make
 - make test
 
