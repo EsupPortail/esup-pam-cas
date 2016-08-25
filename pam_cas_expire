@@ -1,0 +1,63 @@
+#!/bin/sh
+# fait expirer les entrées du cache pam_cas
+
+# paramètres:
+# -e/etc/pam_cas_expire.conf : chemin vers pam_cas_expire.conf (surcharge expireConf par défaut)
+# -f/etc/pam_cas.conf : chemin vers pam_cas.conf (surcharge pamCasConf par défaut)
+# -c/var/cache/pam_cas : chemin vers le dossier de cache des tickets (surcharge cacheDirectory issu de pamCasConf ou de expireConf)
+# -l720 : surcharge cacheLifetime 
+# -t60 : surcharge cacheTimeout
+
+# -- valeurs par défaut --
+# durée maximale d'une session (minutes), 0=illimité
+cacheLifetime=720
+# durée d'expiration sur inactivité (minutes), 0=illimité
+cacheTimeout=60
+# fichiers de config
+pamCasConf="/etc/pam_cas.conf"
+expireConf="/etc/pam_cas_expire.conf"
+cacheDirectory=
+verbose=
+# ----
+
+cacheLifetimeO=
+cacheTimeoutO=
+pamCasConfO=
+expireConfO=
+cacheDirectoryO=
+
+while [ -n "$1" ] ; do
+    opt="${1#-e}" ; [ "$opt" != "$1" ] && expireConfO="$opt"
+    opt="${1#-f}" ; [ "$opt" != "$1" ] && pamCasConfO="$opt"
+    opt="${1#-c}" ; [ "$opt" != "$1" ] && cacheDirectoryO="$opt"
+    opt="${1#-l}" ; [ "$opt" != "$1" ] && cacheLifetimeO="$opt"
+    opt="${1#-t}" ; [ "$opt" != "$1" ] && cacheTimeoutO="$opt"
+    [ "$1" = "-v" ] && verbose=1
+    shift
+done
+
+[ -n "$expireConfO" ] && expireConf="$expireConfO"
+[ -e "$expireConf" ] && . "$expireConf"
+
+[ -n "$pamCasConfO" ] && pamCasConf="$pamCasConfO"
+if [ -n "$cacheDirectoryO" ] ; then 
+    cacheDirectory="$cacheDirectoryO"
+elif [ -n "$pamCasConf" ] && [ -e "$pamCasConf" ] ; then
+    cacheDirectory=`sed -rn 's/^\s*cacheDirectory\s+//p' "$pamCasConf"`
+fi
+
+[ -n "$cacheDirectory" ] || exit 0
+[ -d "$cacheDirectory" ] || exit 0
+
+[ -n "$cacheLifetimeO" ] && cacheLifetime="$cacheLifetimeO"
+[ -n "$cacheTimeoutO" ] && cacheTimeout="$cacheTimeoutO"
+
+[ -n "$verbose" ] && echo "cacheDirectory=$cacheDirectory cacheLifetime=$cacheLifetime cacheTimeout=$cacheTimeout"
+
+if [ -n "$cacheLifetime" ] && [ $cacheLifetime -gt 0 ] ; then
+    find "$cacheDirectory" -type f -name "*,*" -mmin +"$cacheLifetime" -delete
+fi
+
+if [ -n "$cacheTimeout" ] && [ $cacheTimeout -gt 0 ] ; then
+    find "$cacheDirectory" -type f -name "*,*" -amin +"$cacheTimeout" -delete
+fi
