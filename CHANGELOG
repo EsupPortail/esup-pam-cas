@@ -1,3 +1,6 @@
+Pam_cas-2.0.11-esup-2.0.6 (09/2016) :
+    - ajout de cacheDirectory: add simple proxy tickets file cache
+
 Pam_cas-2.0.11-esup-2.0.5 (10/03/2009) :
     - utilisation de http/1.1 au lieu 1.0
         modification proposee par Benoit Jacquemont - SMILE
