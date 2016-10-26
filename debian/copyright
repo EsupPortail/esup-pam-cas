@@ -1,0 +1,33 @@
+This package was debianized by Benjamin Renard <brenard@easter-eggs.com> on
+Wed, 26 Oct 2016 17:42:45 +0200.
+
+It was downloaded from https://github.com/EsupPortail/esup-pam-cas/releases
+
+Upstream Author: ESUP-portail consortium
+
+Copyright: 2004 ESUP-portail consortium 
+
+License:
+
+ESUP-Portail Pam_CAS 2.0.10-esup-1-RC1-1  - Copyright (c) 2004 ESUP-portail consortium 
+
+This software is issued from Yale ITS CAS client-2.0.10
+(http://www.yale.edu/tp/cas)
+Copyright (c) 2002-2004 Yale University
+
+you can use it under Yale ITS CAS licensing policy
+
+For more information on Yale ITS CAS licensing policy, please refer to 
+cas-client-2.0.10/README.
+
+See also the esup-portail license terms site for more details: 
+http://www.esup-portail.org/license.html
+
+
+The Debian packaging is (C) 2016, Benjamin Renard <brenard@easter-eggs.com> and
+is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
+
+
+# Please also look if there are files or directories which have a
+# different copyright/license attached and list them here.
+
