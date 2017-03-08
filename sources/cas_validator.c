@@ -152,22 +152,22 @@ int cas_validate(
   full_request = malloc(strlen(CAS_METHOD) + strlen(" ")
     + strlen(config->uriValidate) + strlen("?ticket=") + strlen(ticket) + 
     + strlen("&service=") + strlen(service) + strlen(" ") 
-    + strlen(GENERIC_HEADERS) + strlen ("\n")
+    + strlen(GENERIC_HEADERS) + strlen ("\r\n")
 #ifdef HEADER_HOST_NAME
     + strlen(HEADER_HOST_NAME) + strlen (": ") + strlen (config->host)
 #endif
-    + strlen("\n\n") + 1);
+    + strlen("\r\n\r\n") + 1);
   if (full_request == NULL)
   {
       DEBUG_LOG("Error memory allocation%s\n", "");
       END(CAS_ERROR_MEMORY_ALLOC);
   }
 #ifdef HEADER_HOST_NAME
-  sprintf(full_request, "%s %s?ticket=%s&service=%s %s\n%s: %s\n\n",
+  sprintf(full_request, "%s %s?ticket=%s&service=%s %s\r\n%s: %s\r\n\r\n",
 	  CAS_METHOD, config->uriValidate, ticket, service, GENERIC_HEADERS,
           HEADER_HOST_NAME,config->host);
 #else
-  sprintf(full_request, "%s %s?ticket=%s&service=%s %s\n\n",
+  sprintf(full_request, "%s %s?ticket=%s&service=%s %s\r\n\r\n",
 	  CAS_METHOD, config->uriValidate, ticket, service, GENERIC_HEADERS);
 #endif
 

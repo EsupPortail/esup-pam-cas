@@ -50,7 +50,7 @@
 #define CAS_METHOD "GET"
 
 #ifdef HTTP_1_1
-#  define GENERIC_HEADERS "HTTP/1.1\nConnection: close"
+#  define GENERIC_HEADERS "HTTP/1.1\r\nConnection: close\r\nUser-Agent: libpam-cas"
 #  define HEADER_HOST_NAME "Host"
 #else
 #  define GENERIC_HEADERS "HTTP/1.0"
