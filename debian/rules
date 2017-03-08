@@ -15,5 +15,6 @@ endif
 override_dh_auto_build:
 	pwd
 	cp $(CURDIR)/sources/Makefile.redhat $(CURDIR)/sources/Makefile
+	cd $(CURDIR)/sources; make clean
 	cd $(CURDIR)/sources; make
 	cd $(CURDIR)/sources; make castest
