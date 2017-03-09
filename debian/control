@@ -1,0 +1,12 @@
+Source: libpam-cas
+Section: devel
+Priority: optional
+Maintainer: Benjamin Renard <brenard@easter-eggs.com>
+Build-Depends: libpam0g-dev, libssl-dev, debhelper (>= 4.0.0)
+Standards-Version: 3.6.1
+
+Package: libpam-cas
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: CAS Pluggable Authentication Module for PAM
+ This package includes a special PAM module to provide CAS authentification

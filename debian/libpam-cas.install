@@ -1,0 +1,4 @@
+sources/pam_cas.so lib/security
+sources/castest usr/sbin
+pam_cas.conf usr/share/doc/libpam-cas
+pam_cas.conf etc
