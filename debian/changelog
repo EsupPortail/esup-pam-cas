@@ -1,6 +1,0 @@
-libpam-cas (2.0.11-esup-2.0.6) jessie-ee; urgency=low
-
-  * Initial release 
-
- -- Benjamin Renard <brenard@easter-eggs.com>  Wed, 26 Oct 2016 17:42:45 +0200
-
