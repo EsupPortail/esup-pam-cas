@@ -66,14 +66,11 @@
 
 static int debug = 0;
 
-static int arrayContains(char *array[], char *element);
-
 
 static void urlencode_(char *src, char *enc) {
     for (; src; src++) {
         char i = *src;
-        char i_ = isalnum(i)||i == '*'||i == '-'||i == '.'||i == '_' ? i : (i == ' ') ? '+' : 0;
-        if (i_) {
+        if (isalnum(i)||i == '*'||i == '-'||i == '.'||i == '_') {
             *enc++ = i;
         } else {
             *enc++ = '%';
@@ -287,7 +284,7 @@ end:
 }
 
 // returns 1 if a char* array contains the given element, 0 otherwise
-static int arrayContains(char *array[], char *element) {
+int arrayContains(char *array[], char *element) {
   char *p;
   int i = 0;
 

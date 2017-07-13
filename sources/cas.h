@@ -100,6 +100,8 @@ typedef struct pam_cas_config
 #define DEBUG_LOCAL         2
 
 
+int arrayContains(char *array[], char *element);
+
 int cas_validate(
 	     char *ticket, char *service, char *outbuf, int outbuflen, pam_cas_config_t *config);
 

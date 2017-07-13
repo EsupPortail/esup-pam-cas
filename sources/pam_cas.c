@@ -132,6 +132,30 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
       END(PAM_AUTH_ERR);
     }
 
+    /* we may need to modify pw, we must clone it since the one we got from PAM is readonly */
+    pw = strdup(pw);
+    char *service_ = strchr(pw, ' ');
+    if (service_) {
+        /* instead of proxy ticket, this is a direct ticket, asked for a specific service */
+
+        /* pw is the first part, service is the second part */
+        *service_ = '\0';
+        /* replace service with the one from pw */
+        if (service) free(service);
+        service = strdup(service_ + 1);
+
+        /* the service MUST be whitelisted (we ignore parameters though) */
+        char *query = strstr(service, "?");
+        if (query) *query = '\0';
+
+        if (!pstConfig->proxies || !pstConfig->proxies[0] ||    
+            !arrayContains(pstConfig->proxies, service)) {
+            syslog(LOG_ERR, "bad proxy: %s\n", service);
+            END(CAS_BAD_PROXY);
+        }
+        if (query) *query = '?';
+    }
+
     if (pstConfig->cacheDirectory != NULL &&
         hasCache(service, user, pw, pstConfig)) {
       if (pstConfig->debug)
@@ -175,6 +199,8 @@ end:
   closelog();
   if (service)
     free(service);
+  if (pw)
+    free(pw);
   if (configFile)
     free(configFile);
   //  if (pstConfig)
