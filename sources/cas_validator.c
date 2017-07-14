@@ -44,6 +44,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <syslog.h>
@@ -67,6 +68,26 @@ static int debug = 0;
 
 static int arrayContains(char *array[], char *element);
 
+
+static void urlencode_(char *src, char *enc) {
+    for (; src; src++) {
+        char i = *src;
+        char i_ = isalnum(i)||i == '*'||i == '-'||i == '.'||i == '_' ? i : (i == ' ') ? '+' : 0;
+        if (i_) {
+            *enc++ = i;
+        } else {
+            *enc++ = '%';
+            sprintf(enc, "%02X", i);
+            enc += 2;
+        }
+    }
+}
+
+static char *urlencode(char *src) {
+    char *enc = malloc(strlen(src) * 3); // max size if everything is encoded
+    urlencode_(src, enc);
+    return enc;
+}
 
 /** Returns status of ticket by filling 'buf' with a NetID if the ticket
  *  is valid and buf is large enough and returning 1.  If not, 0 is
@@ -147,6 +168,8 @@ int cas_validate(
       END(CAS_ERROR_CONN);
     }
   }
+
+  service = urlencode(service);
 
   /* build request */
   full_request = malloc(strlen(CAS_METHOD) + strlen(" ")
@@ -258,6 +281,8 @@ end:
     BIO_free_all(bio);
   if (full_request)
     free(full_request);
+  if (service)
+    free(service);
   return ret;
 }
 
