@@ -1,3 +1,4 @@
 usr/sbin
 lib/security
 usr/share/doc/libpam-cas
+var/cache/pam_cas

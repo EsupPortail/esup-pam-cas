@@ -1,0 +1,12 @@
+Add use of /etc/default config file
+--- a/pam_cas_expire
++++ b/pam_cas_expire
+@@ -36,6 +36,8 @@
+     shift
+ done
+ 
++[ -e "/etc/default/pam_cas_expire.conf" ] && . "/etc/default/pam_cas_expire.conf"
++
+ [ -n "$expireConfO" ] && expireConf="$expireConfO"
+ [ -e "$expireConf" ] && . "$expireConf"
+ 
