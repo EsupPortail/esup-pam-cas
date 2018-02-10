@@ -1,0 +1,9 @@
+Active cache settings by default
+--- a/pam_cas.conf
++++ b/pam_cas.conf
+@@ -33,4 +33,4 @@
+ # No caching of proxy tickets by default.
+ # Configure a cacheDirectory if you want to enable caching of proxy tickets.
+ # You also need to configure a cron to clean the directory
+-#cacheDirectory /var/cache/pam_cas
++cacheDirectory /var/cache/pam_cas

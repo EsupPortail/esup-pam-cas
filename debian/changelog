@@ -1,3 +1,10 @@
+libpam-cas (2.0.11-esup-2.0.8) jessie; urgency=low
+
+  * add pam_cas_expire into debian package (default config and cron)
+  * cache is enabled by default
+
+ -- Yann Richard <yann.richard@univ-rennes2.fr>  Thu, 08 Feb 2018 17:47:29 +0100
+
 libpam-cas (2.0.11-esup-2.0.7) jessie; urgency=low
 
   * fix HTTP request to be compliant with RFC7230
