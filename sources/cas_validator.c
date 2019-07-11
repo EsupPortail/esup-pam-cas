@@ -119,6 +119,8 @@ int cas_validate(
        if the server suddenly wants a new handshake, OpenSSL handles it in the background */
     BIO_get_ssl(bio, & ssl);
     SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+    /* Set hostname for SNI extension */
+    SSL_set_tlsext_host_name(ssl, config->host);
 
     /* Create and setup the connection */
     DEBUG_LOG("We connect to host %s\n", config->host);
