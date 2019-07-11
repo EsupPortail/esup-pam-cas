@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
   printf("uri = %s\n", pstConfig->uriValidate);
   printf("ssl = %s\n", pstConfig->ssl ? "on":"off");
   printf("trusted_ca = %s\n", pstConfig->trusted_ca ? pstConfig->trusted_ca : "nothing");
+  printf("trusted_path = %s\n", pstConfig->trusted_path ? pstConfig->trusted_path : "nothing");
   printf("cacheDirectory = %s\n", pstConfig->cacheDirectory ? pstConfig->cacheDirectory : "disabled");
   printf("debug = localtest\n");
   i = 0;

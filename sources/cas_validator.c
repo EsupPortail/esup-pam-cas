@@ -106,7 +106,7 @@ int cas_validate(
     }
 
     /* Load the trust store */
-    if(! SSL_CTX_load_verify_locations(ctx, config->trusted_ca, NULL))
+    if(! SSL_CTX_load_verify_locations(ctx, config->trusted_ca, config->trusted_path))
     {
       DEBUG_LOG("Error loading certificate store : %s\n", ERR_reason_error_string(ERR_get_error()));
       END(CAS_SSL_ERROR_CERT_LOAD);

@@ -63,6 +63,7 @@ typedef struct pam_cas_config
     char *uriValidate;          // URI to validate PT or ST
     char *service;              // URL from service
     char *trusted_ca;           // Contents trusted certificate
+    char *trusted_path;         // path of hashed certificates
     char **proxies;             // proxies authorized
     char *cacheDirectory;       // directory caching previous PT answers
     int ssl;                    // http or https
