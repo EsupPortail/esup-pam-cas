@@ -103,6 +103,10 @@ read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug
       {
 	  CHECKPOINTER (result->trusted_ca = strdup (v));
       }
+      else if ((!strcasecmp (k, "trusted_path")) && (result->trusted_path == NULL))
+      {
+	  CHECKPOINTER (result->trusted_path = strdup (v));
+      }
       else if ((!strcasecmp (k, "cacheDirectory")) && (result->cacheDirectory == NULL))
       {
 	  CHECKPOINTER (result->cacheDirectory = strdup (v));
@@ -134,9 +138,9 @@ read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug
   {
 	  CHECKPOINTER (result->uriValidate = strdup (DEFAULT_URI_VALIDATE));
   }
-  if ((result->ssl) && (! result->trusted_ca))
+  if ((result->ssl) && (! result->trusted_ca) && (!result->trusted_path))
   {
-      LOG("missing \"trusted_ca\" while ssl in file \"%s\"\n", configFile);
+      LOG("missing \"trusted_ca\" and \"trusted_path\" while ssl in file \"%s\"\n", configFile);
       return CAS_ERROR_CONFIG;
   }
 
@@ -169,6 +173,7 @@ static int alloc_config (pam_cas_config_t ** presult)
   result->uriValidate = NULL;
   result->service = NULL;
   result->trusted_ca = NULL;
+  result->trusted_path = NULL;
   result->cacheDirectory = NULL;
   result->ssl = 1;
   result->debug = 0;
@@ -243,6 +248,8 @@ void free_config(pam_cas_config_t ** pstConfig)
     free(conf->service);
   if (conf->trusted_ca != NULL)
     free(conf->trusted_ca);
+  if (conf->trusted_path != NULL)
+    free(conf->trusted_path);
   if (conf->cacheDirectory != NULL)
     free(conf->cacheDirectory);
   if (conf->proxies != NULL)
