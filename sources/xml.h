@@ -30,4 +30,4 @@
  *  or promote products derived from this software.
  */
 
-char *element_body(char *doc, char *tagname, int n, char *buf, int buflen);
+char *element_body(const char *doc, const char *tagname, int n, char *buf, int buflen);

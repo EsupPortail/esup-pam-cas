@@ -36,11 +36,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#define RETURN(x) { ret = (x); goto end; }
-
 /*
 int main(int argc, char **argv) {
-  char *s = "<a><b><c>one</c></b><c>two</c><c>three</c></a>";
+  char *s = "<cas:a><cas:b><cas:c>one</cas:c></cas:b><cas:c>two</cas:c><cas:c>three</cas:c></cas:a>";
   char buf[1024];
   printf("%s\n", element_body(s, "c", 1, buf, sizeof(buf)));
   printf("%s\n", element_body(s, "c", 2, buf, sizeof(buf)));
@@ -54,34 +52,43 @@ int main(int argc, char **argv) {
  * those representing other elements) within the nth element in the
  * document with the name provided by tagname.
  */
-char *element_body(char *doc, char *tagname, int n, char *buf, int buflen) {
-  char *start_tag_pattern =
-    malloc(strlen(tagname) + strlen("<") + strlen(">") + 1);
-  char *end_tag_pattern =
-    malloc(strlen(tagname) + strlen("<") + strlen("/") + strlen(">") + 1);
-  char *body_start, *body_end;
-  char *ret;
+char *element_body(const char *doc, const char *tagname, int n, char *buf, int buflen) {
+  int len = strlen("<cas:>") + strlen(tagname);
+  const char *body_start, *body_end, *s;
+  char *d0, *d1, *ret;
+  char *start_tag_pattern = d0 =  malloc(len + 1);
+  char *end_tag_pattern = d1 = malloc(len + 2);
 
-  sprintf(start_tag_pattern, "<%s>", tagname);
-  sprintf(end_tag_pattern, "</%s>", tagname);
+  if (!d0 || !d1)
+    goto return_null;
+
+  *d0++ = *d1++ = '<';
+  *d1++ = '/';
+  *d0++ = *d1++ = 'c';
+  *d0++ = *d1++ = 'a';
+  *d0++ = *d1++ = 's';
+  *d0++ = *d1++ = ':';
+  for (s = tagname;*s;) *d0++ = *d1++ = *s++;
+  *d0++ = *d1++ = '>';
+  *d0 = *d1 = 0;
+
   body_start = doc;
-  while (n-- > 0) {
+  while (--n >= 0) {
     body_start = strstr(body_start, start_tag_pattern);
     if (!body_start)
-      RETURN(NULL);
-    body_start += strlen(start_tag_pattern);
+      goto return_null;
+    body_start += len;
   }
   body_end = strstr(body_start, end_tag_pattern);
-  if (!body_end)
-    RETURN(NULL);
-  if (body_end - body_start < buflen - 1) {
-    strncpy(buf, body_start, body_end - body_start);
-    buf[body_end - body_start] = 0;
-  } else {
-    strncpy(buf, body_start, buflen - 1);
-    buf[buflen - 1] = 0;
+  if (!body_end) {
+ return_null:
+    ret = NULL;
+    goto end;
   }
-  RETURN(buf);
+  if ((len = body_end - body_start) >= buflen)
+      len = buflen - 1;
+  for (d0 = ret = buf, s = body_start;--len >= 0;) *d0++ = *s++;
+  *d0 = 0;
 
   end:
     if (start_tag_pattern)

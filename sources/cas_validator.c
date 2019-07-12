@@ -52,8 +52,6 @@
 
 
 #define END(x) { ret = (x); goto end; }
-#define FAIL END(CAS_ERROR)
-#define SUCCEED END(CAS_SUCCESS)
 
 
 #define DEBUG_LOG(X, Y)  do { if (debug) { \
@@ -73,7 +71,7 @@ static int arrayContains(char *array[], char *element);
  *  returned.
  */
 int cas_validate(
-    char *ticket, char *service, char *outbuf, int outbuflen, pam_cas_config_t *config)
+    const char *ticket, char *outbuf, int outbuflen, const pam_cas_config_t *config)
 {
   int b, ret, total;
   SSL_CTX *ctx = NULL;
@@ -81,6 +79,7 @@ int cas_validate(
   SSL *ssl = NULL;
   char buf[4096];
   char *full_request = NULL, *str;
+  const char *src;
   char netid[CAS_LEN_NETID];
   char parsebuf[128];
 
@@ -151,31 +150,47 @@ int cas_validate(
   }
 
   /* build request */
-  full_request = malloc(strlen(CAS_METHOD) + strlen(" ")
-    + strlen(config->uriValidate) + strlen("?ticket=") + strlen(ticket) + 
-    + strlen("&service=") + strlen(service) + strlen(" ") 
-    + strlen(GENERIC_HEADERS) + strlen ("\r\n")
+  total = strlen(CAS_METHOD) + strlen(" ")
+    + strlen(config->uriValidate) + strlen("?ticket=") + strlen(ticket)
+    + strlen("&service=") + strlen(config->service) + strlen(" ")
+    + strlen(GENERIC_HEADERS)
 #ifdef HEADER_HOST_NAME
+    + strlen ("\r\n")
     + strlen(HEADER_HOST_NAME) + strlen (": ") + strlen (config->host)
 #endif
-    + strlen("\r\n\r\n") + 1);
-  if (full_request == NULL)
+    + strlen("\r\n\r\n") + 1;
+  if (!(full_request = malloc(total)))
   {
       DEBUG_LOG("Error memory allocation%s\n", "");
       END(CAS_ERROR_MEMORY_ALLOC);
   }
+
+  for (str = full_request, src = CAS_METHOD;*src;) *str++ = *src++;
+  *str++ = ' ';
+  for (src = config->uriValidate;*src;) *str++ = *src++;
+  for (src = "?ticket=";*src;) *str++ = *src++;
+  for (src = ticket;*src;) *str++ = *src++;
+  for (src = "&service=";*src;) *str++ = *src++;
+  for (src = config->service;*src;) *str++ = *src++;
+  *str++ = ' ';
+  for (src = GENERIC_HEADERS;*src;) *str++ = *src++;
 #ifdef HEADER_HOST_NAME
-  sprintf(full_request, "%s %s?ticket=%s&service=%s %s\r\n%s: %s\r\n\r\n",
-	  CAS_METHOD, config->uriValidate, ticket, service, GENERIC_HEADERS,
-          HEADER_HOST_NAME,config->host);
-#else
-  sprintf(full_request, "%s %s?ticket=%s&service=%s %s\r\n\r\n",
-	  CAS_METHOD, config->uriValidate, ticket, service, GENERIC_HEADERS);
+  *str++ = '\r';
+  *str++ = '\n';
+  for (src = HEADER_HOST_NAME;*src;) *str++ = *src++;
+  *str++ = ':';
+  *str++ = ' ';
+  for (src = config->host;*src;) *str++ = *src++;
 #endif
+  *str++ = '\r';
+  *str++ = '\n';
+  *str++ = '\r';
+  *str++ = '\n';
+  *str = 0;
 
   /* send request */
   DEBUG_LOG("---- request :\n%s\n", full_request);
-  if (BIO_write(bio, full_request, strlen(full_request)) != strlen(full_request))
+  if (BIO_write(bio, full_request, total) != total)
   {
     DEBUG_LOG("Unable to correctly send request to %s\n", config->host);
     END(CAS_ERROR_HTTP);
@@ -217,21 +232,32 @@ int cas_validate(
   // make sure that the authentication succeeded
   
   if (!element_body(
-    str, "cas:authenticationSuccess", 1, parsebuf, sizeof(parsebuf))) {
+    str, "authenticationSuccess", 1, parsebuf, sizeof(parsebuf))) {
     END(CAS_BAD_TICKET);
   }
 
   // retrieve the NetID
-  if (!element_body(str, "cas:user", 1, netid, sizeof(netid))) {
+  if (!element_body(str, "user", 1, netid, sizeof(netid))) {
     DEBUG_LOG("unable to determine username%s\n", "");
     END(CAS_PROTOCOL_FAILURE);
   }
 
+  // check proxied service username attrbute if supplied
+  if (config->attribute && config->attribute[0]) {
+	if (!element_body(str, "attributes", 1, parsebuf, sizeof(parsebuf))) {
+	  DEBUG_LOG("unable to get attributes\n", "");
+	  END(CAS_PROTOCOL_FAILURE);
+	}
+	if (!element_body(str, config->attribute, 1, netid, sizeof(netid))) {
+	  DEBUG_LOG("unable to find username attribute '%s'\n", config->attribute);
+	  END(CAS_PROTOCOL_FAILURE);
+	}
+  }
 
   // check the first proxy (if present)
   if ((config->proxies) && (config->proxies[0]))
-    if (element_body(str, "cas:proxies", 1, parsebuf, sizeof(parsebuf)))
-      if (element_body(str, "cas:proxy", 1, parsebuf, sizeof(parsebuf)))
+    if (element_body(str, "proxies", 1, parsebuf, sizeof(parsebuf)))
+      if (element_body(str, "proxy", 1, parsebuf, sizeof(parsebuf)))
         if (!arrayContains(config->proxies, parsebuf)) {
           DEBUG_LOG("bad proxy: %s\n", parsebuf);
           END(CAS_BAD_PROXY);
@@ -249,7 +275,7 @@ int cas_validate(
   }
 
   strcpy(outbuf, netid);
-  SUCCEED;
+  ret = CAS_SUCCESS;
 
    /* cleanup and return */
 
