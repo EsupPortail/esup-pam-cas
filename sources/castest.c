@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
   char *ticket = NULL;
   char *service = NULL;
   char *attribute = NULL;
+  char *cachefile = NULL;
   char netid[CAS_LEN_NETID];
   int retour, i;
 
@@ -119,7 +120,8 @@ int main(int argc, char **argv) {
   pstConfig->debug = DEBUG_LOCAL;
 
   if (pstConfig->cacheDirectory != NULL &&
-      hasCache(pstConfig->service, "foo", ticket, pstConfig)) {
+      ((cachefile = cacheFile("foo", ticket, pstConfig)) != NULL) &&
+      hasCache(cachefile)) {
     printf("found ticket in cache\n");
   }
   
@@ -130,6 +132,8 @@ int main(int argc, char **argv) {
   else
     printf("invalid ticket : %s\n\n", getErrorMessage(retour));
   
+  if (cachefile)
+    free(cachefile);
   free_config(&pstConfig);
   return 0;
 

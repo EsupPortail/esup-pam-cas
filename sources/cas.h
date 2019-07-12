@@ -105,8 +105,9 @@ typedef struct pam_cas_config
 int cas_validate(
 	     const char *ticket, char *outbuf, int outbuflen, const pam_cas_config_t *config);
 
-int hasCache(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config);
-void setCache(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config);
+char *cacheFile(const char *user, const char *ticket, const pam_cas_config_t *config);
+int hasCache(const char *file);
+void setCache(const char *file);
 
 int read_config (const char *service, const char *attribute, const char *configFile, pam_cas_config_t ** presult, int localDebug);
 void free_config(pam_cas_config_t ** pstConfig);

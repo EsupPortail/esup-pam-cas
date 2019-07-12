@@ -73,6 +73,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     char *user, *pw;
     const char *service = NULL;
     const char *attribute = NULL;
+    char *cachefile = NULL;
     char netid[CAS_LEN_NETID];
     int success, res, ret;
 
@@ -142,7 +143,9 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         END(PAM_AUTH_ERR);
     }
     if (pstConfig->cacheDirectory != NULL &&
-        hasCache(pstConfig->service, user, pw, pstConfig)) {
+        (cachefile = cacheFile(user, pw, pstConfig)) &&
+        hasCache((cachefile)))
+    {
       if (pstConfig->debug)
         syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CACHED CAS PT:%s", user, pw);
       END(PAM_SUCCESS);      
@@ -160,8 +163,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 	if (pstConfig->debug)
 	  syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CAS PT:%s", user, pw);
 
-        if (pstConfig->cacheDirectory != NULL)
-          setCache(pstConfig->service, user, pw, pstConfig);
+        if (cachefile)
+          setCache(cachefile);
        
         END(PAM_SUCCESS);
     } else {
@@ -181,6 +184,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
 end:
   closelog();
+  if (cachefile)
+    free(cachefile);
   free_config(&pstConfig);
   return ret;
 }
