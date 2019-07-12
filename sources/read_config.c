@@ -18,12 +18,7 @@
 } while (0);
 
 
-#define CHECKPOINTER(ptr) do { if ((ptr) == NULL) { \
-    fclose(fp); \
-    free_config(presult); \
-    return CAS_ERROR_MEMORY_ALLOC; \
-} \
-} while (0)
+#define CHECKPOINTER(ptr) {if (!(ptr)) goto memory_error;}
 
 static int alloc_config (pam_cas_config_t ** presult);
 static char **add_proxy(char **proxies, const char *proxy);
@@ -34,9 +29,10 @@ static int debug;
 
 
 int
-read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug)
+read_config (const char *service, const char *attribute, const char *configFile, pam_cas_config_t ** presult, int localDebug)
 {
-  FILE *fp;
+  int ret;
+  FILE *fp = NULL;
   char b[BUFSIZ];
   pam_cas_config_t *result;
 
@@ -63,6 +59,12 @@ read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug
   LOG("configFile = %s\n", configFile);
 
 
+  // options override config file parameters
+  if (service)
+    CHECKPOINTER (result->service = strdup (service));
+  if (attribute)
+    CHECKPOINTER (result->attribute = strdup (attribute));
+    
   while (fgets (b, sizeof (b), fp) != NULL)
   {
       char *k, *v;
@@ -99,6 +101,14 @@ read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug
       {
 	  CHECKPOINTER (result->uriValidate = strdup (v));
       }
+      else if ((!strcasecmp (k, "service"))&& (result->service == NULL))
+      {
+	  CHECKPOINTER (result->service = strdup (v));
+      }
+      else if ((!strcasecmp (k, "attribute"))&& (result->attribute == NULL))
+      {
+	  CHECKPOINTER (result->attribute = strdup (v));
+      }
       else if ((!strcasecmp (k, "trusted_ca")) && (result->trusted_ca == NULL))
       {
 	  CHECKPOINTER (result->trusted_ca = strdup (v));
@@ -123,16 +133,18 @@ read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug
       {
           result->proxies = add_proxy(result->proxies, v);
           if (result->proxies == NULL)
-	  {
-             fclose(fp);
-             return CAS_ERROR_MEMORY_ALLOC;
+          {
+ memory_error:
+             ret = CAS_ERROR_MEMORY_ALLOC;
+             goto end;
           }
       }
   }
   if (! result->host)
   {
       LOG("missing \"host\" in file \"%s\"\n",  configFile);
-      return CAS_ERROR_CONFIG;
+      ret = CAS_ERROR_CONFIG;
+      goto end;
   }
   if (! result->uriValidate)
   {
@@ -141,21 +153,24 @@ read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug
   if ((result->ssl) && (! result->trusted_ca) && (!result->trusted_path))
   {
       LOG("missing \"trusted_ca\" and \"trusted_path\" while ssl in file \"%s\"\n", configFile);
-      return CAS_ERROR_CONFIG;
+      ret = CAS_ERROR_CONFIG;
+      goto end;
   }
 
   if (! result->port)
   {
-    result->port = result->ssl ? strdup("443") : strdup("80");
+      CHECKPOINTER(result->port = result->ssl ? strdup("443") : strdup("80"));
   }
+  ret = CAS_SUCCESS;
 
+end:
   fclose (fp);
 
   /* can't use _pam_overwrite because it only goes to end of string,
    * not the buffer
    */
   memset (b, 0, BUFSIZ);
-  return CAS_SUCCESS;
+  return ret;
 }
 
 
@@ -172,6 +187,7 @@ static int alloc_config (pam_cas_config_t ** presult)
   result->port = 0;
   result->uriValidate = NULL;
   result->service = NULL;
+  result->attribute = NULL;
   result->trusted_ca = NULL;
   result->trusted_path = NULL;
   result->cacheDirectory = NULL;
@@ -246,6 +262,8 @@ void free_config(pam_cas_config_t ** pstConfig)
     free(conf->uriValidate);
   if (conf->service != NULL)
     free(conf->service);
+  if (conf->attribute != NULL)
+    free(conf->attribute);
   if (conf->trusted_ca != NULL)
     free(conf->trusted_ca);
   if (conf->trusted_path != NULL)

@@ -31,33 +31,47 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "cas.h"
 
 
 /* dumb, simple test of cas_validate() function
-three parameters :
+four parameters :
   - service
-  - ticket (ST or PT) to validate
+  - login attribute name
   - config File (default to /etc/cas.conf)
+  - ticket (ST or PT) to validate
 */
   
 int main(int argc, char **argv) {
   pam_cas_config_t *pstConfig = NULL;
   char *configFile = NULL;
-  char *ticket = "PT-1-xxx";
-  char *service = "https://foo.fr";
+  char *ticket = NULL;
+  char *service = NULL;
+  char *attribute = NULL;
+  char *cachefile = NULL;
   char netid[CAS_LEN_NETID];
   int retour, i;
 
-  if (argc > 1) 
-    service = argv[1];
-  if (argc > 2)
-    ticket = argv[2];
-  if (argc >  3)
-    configFile = argv[3];
+  for(;--argc > 0;) {
+	  if (!strncmp(*++argv, "-s", 2))
+		  service = *argv + 2;
+	  else if (!strncmp(*argv, "-a", 2))
+		  attribute = *argv + 2;
+	  else if (!strncmp(*argv, "-f", 2))
+		  configFile = *argv + 2;
+	  else if (**argv != '-')
+		  ticket = *argv;
+	  else {
+		  printf("invalid option %s\n", *argv);
+		  printf("Options: [-s<service>] [-a<attribute>] [-f<configFile>] [<proxyTicket>]\n");
+		  return 1;
+	  }
+  }
 
-  retour = read_config (configFile, &pstConfig, DEBUG_LOCAL);
+  retour = read_config (service, attribute, configFile, &pstConfig, DEBUG_LOCAL);
   if (retour != CAS_SUCCESS)
   {
     printf("Error while reading config file. Error %d\n", retour);
@@ -90,24 +104,36 @@ int main(int argc, char **argv) {
   }
   else
       printf("no proxy\n");
-  printf("service = %s\n", service);
+  if (!pstConfig->service) {
+    pstConfig->service = strdup("https://foo.fr");
+  }
+  printf("service = %s\n", pstConfig->service);
+  if (!pstConfig->attribute || !*pstConfig->attribute)
+  	printf("username attribute not used\n");
+  else
+    printf("username attribute = %s\n", pstConfig->attribute);
+  if (!ticket || !*ticket)
+     ticket = "PT-1-xxx";
   printf("ticket = %s\n\n\n", ticket);
   printf("---------------------------------------------------------------\n\n");
 
   pstConfig->debug = DEBUG_LOCAL;
 
   if (pstConfig->cacheDirectory != NULL &&
-      hasCache(service, "foo", ticket, pstConfig)) {
+      ((cachefile = cacheFile("foo", ticket, pstConfig)) != NULL) &&
+      hasCache(cachefile)) {
     printf("found ticket in cache\n");
   }
   
-  retour = cas_validate(ticket, service, netid, sizeof(netid), pstConfig);
+  retour = cas_validate(ticket, netid, sizeof(netid), pstConfig);
   printf("---------------------------------------------------------------\n\n");
     if (retour == CAS_SUCCESS)
     printf("valid ticket for '%s'\n", netid);
   else
     printf("invalid ticket : %s\n\n", getErrorMessage(retour));
   
+  if (cachefile)
+    free(cachefile);
   free_config(&pstConfig);
   return 0;
 

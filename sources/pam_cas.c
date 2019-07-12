@@ -69,11 +69,13 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
      const char **argv)
 {
     pam_cas_config_t *pstConfig = NULL;
-    char *configFile = NULL;
+    const char *configFile = NULL;
     char *user, *pw;
-    char *service = NULL;
+    const char *service = NULL;
+    const char *attribute = NULL;
+    char *cachefile = NULL;
     char netid[CAS_LEN_NETID];
-    int i, success, res, ret;
+    int success, res, ret;
 
     /* prepare log */
     openlog("PAM_cas", LOG_PID, LOG_AUTH);
@@ -110,30 +112,40 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
          END(PAM_AUTH_ERR);
 
     /* check arguments */
-    for (i = 0; i < argc; i++) {
-        if (!strncmp(argv[i], "-s", 2)) {
-	    service = strdup(argv[i] + 2);
-	} else if (!strncmp(argv[i], "-f", 2)) {
-	    configFile = strdup(argv[i] + 2);
-        } else if (!strncmp(argv[i], "-e", 2)) {
+    for(;--argc >= 0;argv++)
+    {
+        if (!strncmp(*argv, "-s", 2)) {
+	    service = *argv + 2;
+	} else if (!strncmp(*argv, "-a", 2)) {
+	    attribute = *argv + 2;
+	} else if (!strncmp(*argv, "-f", 2)) {
+	    configFile = *argv + 2;
+        } else if (!strncmp(*argv, "-e", 2)) {
 	    /* don't let the username pass through if it's excluded */
-	    if (!strcmp(argv[i] + 2, user)) {
+	    if (!strcmp(*argv + 2, user)) {
 		syslog(LOG_NOTICE, "user '%s' is excluded from the CAS PAM",
 		    user);
 		END(PAM_AUTH_ERR);
 	    }
 	} else
-	    syslog(LOG_ERR, "invalid option '%s'", argv[i]);
+	    syslog(LOG_ERR, "invalid option '%s'", *argv);
     }
-    res = read_config (configFile, &pstConfig, DEBUG_NO);
+    res = read_config (service, attribute, configFile, &pstConfig, DEBUG_NO);
     if (res != CAS_SUCCESS)
     {
       syslog(LOG_ERR, "Error with config file %s : %s\n", configFile, ErrorMessage[res]);
       END(PAM_AUTH_ERR);
     }
 
+    if (!pstConfig->service)
+    {
+        syslog(LOG_ERR, "No service defined");
+        END(PAM_AUTH_ERR);
+    }
     if (pstConfig->cacheDirectory != NULL &&
-        hasCache(service, user, pw, pstConfig)) {
+        (cachefile = cacheFile(user, pw, pstConfig)) &&
+        hasCache((cachefile)))
+    {
       if (pstConfig->debug)
         syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CACHED CAS PT:%s", user, pw);
       END(PAM_SUCCESS);      
@@ -141,7 +153,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     
     /* determine the CAS-authenticated username */
     success = cas_validate(pw, 
-                           service, 
                            netid, 
                            sizeof(netid),
 			   pstConfig); 
@@ -152,8 +163,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 	if (pstConfig->debug)
 	  syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CAS PT:%s", user, pw);
 
-        if (pstConfig->cacheDirectory != NULL)
-          setCache(service, user, pw, pstConfig);
+        if (cachefile)
+          setCache(cachefile);
        
         END(PAM_SUCCESS);
     } else {
@@ -173,12 +184,9 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
 end:
   closelog();
-  if (service)
-    free(service);
-  if (configFile)
-    free(configFile);
-  //  if (pstConfig)
-  //free_config(&pstConfig);
+  if (cachefile)
+    free(cachefile);
+  free_config(&pstConfig);
   return ret;
 }
 

@@ -62,6 +62,7 @@ typedef struct pam_cas_config
     char *port;                 // port TCP from CAS server
     char *uriValidate;          // URI to validate PT or ST
     char *service;              // URL from service
+    char *attribute;            // username attribute name from CAS
     char *trusted_ca;           // Contents trusted certificate
     char *trusted_path;         // path of hashed certificates
     char **proxies;             // proxies authorized
@@ -102,11 +103,12 @@ typedef struct pam_cas_config
 
 
 int cas_validate(
-	     char *ticket, char *service, char *outbuf, int outbuflen, pam_cas_config_t *config);
+	     const char *ticket, char *outbuf, int outbuflen, const pam_cas_config_t *config);
 
-int hasCache(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config);
-void setCache(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config);
+char *cacheFile(const char *user, const char *ticket, const pam_cas_config_t *config);
+int hasCache(const char *file);
+void setCache(const char *file);
 
-int read_config (const char *configFile, pam_cas_config_t ** presult, int localDebug);
+int read_config (const char *service, const char *attribute, const char *configFile, pam_cas_config_t ** presult, int localDebug);
 void free_config(pam_cas_config_t ** pstConfig);
 char * getErrorMessage(int index);
