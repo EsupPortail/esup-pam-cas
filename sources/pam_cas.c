@@ -38,6 +38,7 @@
 #define PAM_SM_AUTH
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -70,6 +71,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 {
     pam_cas_config_t *pstConfig = NULL;
     char *configFile = NULL;
+    FILE *cacheFile = NULL;
     char *user, *pw;
     char *service = NULL;
     char netid[CAS_LEN_NETID];
@@ -132,11 +134,13 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
       END(PAM_AUTH_ERR);
     }
 
-    if (pstConfig->cacheDirectory != NULL &&
-        hasCache(service, user, pw, pstConfig)) {
-      if (pstConfig->debug)
-        syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CACHED CAS PT:%s", user, pw);
-      END(PAM_SUCCESS);      
+    if (pstConfig->cacheDirectory != NULL) {
+        ret = readCache_or_lockCache(service, user, pw, pstConfig, &cacheFile);
+        if (ret != -1) {
+            if (pstConfig->debug)
+                syslog(LOG_NOTICE, "USER '%s' %s WITH CACHED CAS PT:%s", user, ret == PAM_SUCCESS ? "AUTHENTICATED" : "FAILED", pw);
+            goto end;
+        }
     }
     
     /* determine the CAS-authenticated username */
@@ -152,9 +156,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 	if (pstConfig->debug)
 	  syslog(LOG_NOTICE, "USER '%s' AUTHENTICATED WITH CAS PT:%s", user, pw);
 
-        if (pstConfig->cacheDirectory != NULL)
-          setCache(service, user, pw, pstConfig);
-       
         END(PAM_SUCCESS);
     } else {
         if (strcmp(user, netid) && (success == CAS_SUCCESS)) {
@@ -172,6 +173,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     }
 
 end:
+  if (cacheFile != NULL)
+    setCache(cacheFile, ret);
   closelog();
   if (service)
     free(service);

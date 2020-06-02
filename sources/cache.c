@@ -3,18 +3,15 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 #include <openssl/md5.h>
+#include <security/pam_appl.h>
 
 #include "cas.h"
 
 #define DIGEST_LENGTH 16
 
-void create(const char *file) {
-  FILE *f = fopen(file, "w");
-  if (f != NULL) fclose(f);
-}
-
-char *cacheFile(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config)
+char *cacheFilename(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config)
 {
   MD5_CTX context;
   MD5_Init(&context);
@@ -40,33 +37,67 @@ char *cacheFile(const char *service, const char *user, const char *ticket, const
   return f;
 }
 
-int update_atime(const char *f)
+int update_atime(FILE *f)
 {
   struct timespec times[2];
   times[0].tv_sec = 0;
   times[0].tv_nsec = UTIME_NOW;
   times[1].tv_sec = 0;
   times[1].tv_nsec = UTIME_OMIT;
-  return utimensat(0, f, times, 0);
+  return futimens(fileno(f), times);
 }
 
-int hasCache(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config)
+int readCacheFile(FILE *f)
 {
-  char *f = cacheFile(service, user, ticket, config);
+  rewind(f);
+  int ret;
+  char c;
+  if (fscanf(f, "%d%c", &ret, &c) == 2 && c == '\n') {
+      printf("readCacheFile found %d <%c>\n", ret, c);
+      if (ret == PAM_SUCCESS || ret == PAM_AUTH_ERR) return ret;
+  }
+  return -1;
+}
 
-  int has = access(f, F_OK) != -1;
-  if (has) {
-    // update last modified time so we know the ticket is still in use
-    update_atime(f);
+int readCache_or_lockCache(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config, FILE **cacheFile)
+{
+  char *filename = cacheFilename(service, user, ticket, config);
+  FILE *f = fopen(filename, "a+");
+  free(filename);
+
+  if (f == NULL) {
+      fprintf(stderr, "could not open cache file: %s\n", strerror(errno));
+      return -1;
+  }  
+
+  int ret = readCacheFile(f);
+  if (ret !=  -1) {
+      // cool, the normal easy case
+      update_atime(f);
+      fclose(f);
+      return ret;
   }
 
-  free(f);
-  return has;
+  // ensure only one pam_cas is validating the ticket
+  lockf(fileno(f), F_LOCK, 0);
+
+  // check if someone did the work while we were waiting for the lock
+  ret = readCacheFile(f);
+  if (ret !=  -1) {
+      fclose(f); // NB: releases the lock
+      return ret;
+  } else {
+    // this pam_cas is responsable for validating the proxy ticket.
+    // keeping file open and locked
+    *cacheFile = f;
+    return -1; 
+  }
 }
 
-void setCache(const char *service, const char *user, const char *ticket, const pam_cas_config_t *config)
+void setCache(FILE *cacheFile, int status)
 {
-  char *f = cacheFile(service, user, ticket, config);
-  create(f);
-  free(f);
+  rewind(cacheFile); ftruncate(fileno(cacheFile), 0); // just in case?
+
+  fprintf(cacheFile, "%d\n", status);
+  fclose(cacheFile); // NB: releases the lock
 }

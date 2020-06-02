@@ -96,9 +96,10 @@ int main(int argc, char **argv) {
 
   pstConfig->debug = DEBUG_LOCAL;
 
-  if (pstConfig->cacheDirectory != NULL &&
-      hasCache(service, "foo", ticket, pstConfig)) {
-    printf("found ticket in cache\n");
+  FILE *cacheFile = NULL;
+  if (pstConfig->cacheDirectory != NULL) {
+      int ret = readCache_or_lockCache(service, "foo", ticket, pstConfig, &cacheFile);
+      if (ret != -1) printf("found ticket in cache: %d\n", ret);
   }
   
   retour = cas_validate(ticket, service, netid, sizeof(netid), pstConfig);
@@ -107,6 +108,8 @@ int main(int argc, char **argv) {
     printf("valid ticket for '%s'\n", netid);
   else
     printf("invalid ticket : %s\n\n", getErrorMessage(retour));
+
+  if (cacheFile != NULL) setCache(cacheFile, retour);
   
   free_config(&pstConfig);
   return 0;
