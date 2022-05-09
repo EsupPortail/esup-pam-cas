@@ -39,7 +39,7 @@
 #define DEFAULT_CONFIG_NAME     "/etc/pam_cas.conf"
 #define DEFAULT_URI_VALIDATE    "/proxyValidate"
 
-#define CAS_LEN_NETID          320
+#define CAS_LEN_NETID          254
 #define HTTP_1_1               // a commenter pour http 1.0
 
 
