@@ -1,0 +1,83 @@
+CC	=	cc
+LD	=	cc
+libDirs =	-lssl -lcrypto -lpam
+incDirs =	-I /usr/local/include
+LDFLAGS =	
+PAM_LDFLAGS = ${LDFLAGS} -shared -Xlinker -x -Wl,--version-script=pam_cas.version
+LIBS	=
+CPFLAGS	=	-O2 -fPIC
+#CPFLAGS =       -g -Wall
+
+SRCS	=\
+	pam_cas.c\
+	cas_validator.c\
+	xml.c\
+	cache.c read_config.c
+
+OBJS 	=\
+	pam_cas.o\
+	cas_validator.o\
+	xml.o\
+	cache.o read_config.o
+
+SRCTEST =\
+	castest.c
+
+OBJTEST =castest.o
+
+BINTEST	=castest
+
+PAM_CAS  =pam_cas.so
+
+#------------------ targets -------------
+
+all:	$(PAM_CAS) $(BINTEST)
+
+objs	:$(OBJS)
+
+cleanobjs:
+	rm -f $(OBJS)
+
+cleanbin:
+	rm -f $(PAM_CAS)
+
+test:	$(BINTEST)
+
+dist:	$(PAM_CAS) $(BINTEST)
+	rm -f $(OBJS) $(OBJTEST)
+	chmod -x $(PAM_CAS)
+	strip $(PAM_CAS)
+	strip $(BINTEST)
+
+cleantest:
+	rm -f $(OBJTEST) $(BINTEST)
+
+clean:	cleanobjs cleanbin cleantest
+
+#--------------- Dependency rules --------
+
+pam_cas.so:	pam_cas.version $(OBJS)
+	$(LD) -o pam_cas.so $(OBJS) $(libDirs) $(PAM_LDFLAGS) $(LIBS)
+
+pam_cas.o:	pam_cas.c cas.h
+	$(CC) $(CPFLAGS) $(incDirs) -c -o $@ $<
+
+xml.o:		xml.c xml.h
+	$(CC) $(CPFLAGS) $(incDirs) -c -o $@ $<
+
+cas_validator.o: cas_validator.c cas.h xml.h
+	$(CC) $(CPFLAGS) $(incDirs) -c -o $@ $<
+
+read_config.o:	read_config.c cas.h
+	$(CC) $(CPFLAGS) $(incDirs) -c -o $@ $<
+
+cache.o:	cache.c cas.h
+	$(CC) $(CPFLAGS) $(incDirs) -c -o $@ $<
+
+#--------------- Dependency for tests  --------
+
+castest: castest.o $(OBJS)
+	$(LD) -o castest castest.o $(OBJS) $(incDirs) $(libDirs) $(LDFLAGS) $(LIBS)
+
+castest.o: castest.c cas.h
+	$(CC) $(CPFLAGS) $(incDirs) -c -o $@ $<
