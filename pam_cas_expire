@@ -43,7 +43,7 @@ done
 if [ -n "$cacheDirectoryO" ] ; then 
     cacheDirectory="$cacheDirectoryO"
 elif [ -n "$pamCasConf" ] && [ -e "$pamCasConf" ] ; then
-    cacheDirectory=`sed -rn 's/^\s*cacheDirectory\s+//p' "$pamCasConf"`
+    cacheDirectory=`sed -rn 's/^[[:space:]]*cacheDirectory[[:space:]]+//p' "$pamCasConf"`
 fi
 
 [ -n "$cacheDirectory" ] || exit 0
