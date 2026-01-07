@@ -77,7 +77,7 @@ int cas_validate(
   SSL_CTX *ctx = NULL;
   BIO * bio = NULL;
   SSL *ssl = NULL;
-  char buf[4096];
+  char buf[16384];
   char *full_request = NULL, *str;
   const char *src;
   char netid[CAS_LEN_NETID];
